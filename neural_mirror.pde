@@ -50,8 +50,8 @@ int lastTime = 0;
 int direction = 0;
 float lerp_rate = 0;
 String[] dream_ids = {"pE4A9yk0","7ZxJpMk9","DkMle5Eg"};
-//String[] style_ids = {"LnL71DkK","9kgYo1Zp","Bka9oBkM","2kRl49ZW","MZJNYmZY","LnL7oLkK","8k8aLmnM","yE72lBZm"};
-String[] style_ids = {};
+String[] style_ids = {"LnL71DkK","9kgYo1Zp","Bka9oBkM","2kRl49ZW","MZJNYmZY","LnL7oLkK","8k8aLmnM","yE72lBZm"};
+//String[] style_ids = {};
 
 String[] model_ids = concat(dream_ids,style_ids);
 String cam_path;
@@ -157,15 +157,19 @@ class Somatic implements Runnable {
 }
 
 void get_image(){
-  if(cam.available()) {
+  //if(cam.available()) {
+    println("yesWTF");
     cam.read();
   
     Calendar now = Calendar.getInstance();
-    cam_path = path+"/cams/"+String.format("%1$ty%1$tm%1$td_%1$tH%1$tM%1$tS", now)+".png";
+    cam_path = path+"/cams/"+String.format("%1$ty%1$tm%1$td_%1$tH%1$tM%1$tS", now)+".jpg";
     cam.save(cam_path);
     Somatic transformer = new Somatic(cam_path);
     transformer.start();
-  }
+  //}else{
+
+    println("WTF");
+  //}
 }
 
 void setup() {
@@ -174,10 +178,11 @@ void setup() {
   processed_dir.mkdirs();
   cam_dir = new File(path+"/cams/");
   cam_dir.mkdirs();
-  size(1080,1080,P2D);
-  //fullScreen(P2D);
+  //size(1080,1080,P2D);
+  fullScreen(P2D);
   println("key:"+System.getenv("SOMATIC_API_KEY"));
-  cam = new Capture(this, 1280,720, 30);
+  cam = new Capture(this, 1280,720);
+  //cam = new Capture(this, 1280,720, "Live! Cam Sync HD VF0770");
   cam.start();
    if(cam.available()) {
     cam.read();
@@ -214,11 +219,11 @@ void draw() {
     println("only firset 5");
     image(cam,0,0);
 
-  }else if( millis() - lastTime >= 60000){
+  }else if( millis() - lastTime >= 30000){
   //}else if( millis() - lastTime >= 120000){
     lastTime = millis();
-    get_image();
     println("1 minute passed");
+    get_image();
 
   }else if (source_image != null && target_image != null){
 
@@ -291,9 +296,11 @@ void draw() {
       int file_count = listOfFiles.length;
       Random random = new Random();
       int index = random.nextInt(file_count);
-      println(listOfFiles[index]);
-      println("ASDSD");
-      //next_image = loadImage(listOfFiles[index]);
+      //println(listOfFiles[index]);
+      //println("ASDSD");
+      String filePath = listOfFiles[index].toString();
+      println(filePath);
+      next_image = loadImage(filePath);
     }
     println("end while");
 
