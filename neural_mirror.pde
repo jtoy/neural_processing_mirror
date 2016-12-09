@@ -50,7 +50,7 @@ int lastTime = 0;
 int direction = 0;
 float lerp_rate = 0;
 String[] dream_ids = {"pE4A9yk0","7ZxJpMk9","DkMle5Eg"};
-String[] style_ids = {"LnL71DkK","9kgYo1Zp","Bka9oBkM","2kRl49ZW","MZJNYmZY","LnL7oLkK","8k8aLmnM","yE72lBZm"};
+String[] style_ids = {"LnL71DkK","9kgYo1Zp","Bka9oBkM","2kRl49ZW","MZJNYmZY","LnL7oLkK","8k8aLmnM","yE72lBZm","VEqz4xkx","7E9r2WkR","MZJN75ZY"};
 //String[] style_ids = {};
 
 String[] model_ids = concat(dream_ids,style_ids);
@@ -139,9 +139,12 @@ class Somatic implements Runnable {
       if(tmp.width != -1 && tmp.height != -1){
         println("style fine");
         image = tmp.copy();
-        if(target_image == null){
-          target_image= tmp.copy();
+        //if(target_image == null){
+        if(tmp.height != height || tmp.width !=  width){
+          tmp.resize(width,height);
         }
+        target_image= tmp.copy();
+        //}
       }else{
         println("style not fine");
       }
@@ -181,7 +184,8 @@ void setup() {
   //size(1080,1080,P2D);
   fullScreen(P2D);
   println("key:"+System.getenv("SOMATIC_API_KEY"));
-  cam = new Capture(this, 1280,720);
+  cam = new Capture(this, 1920,1080);
+  //cam = new Capture(this, 1280,720);
   //cam = new Capture(this, 1280,720, "Live! Cam Sync HD VF0770");
   cam.start();
    if(cam.available()) {
