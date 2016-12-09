@@ -50,7 +50,9 @@ int lastTime = 0;
 int direction = 0;
 float lerp_rate = 0;
 String[] dream_ids = {"pE4A9yk0","7ZxJpMk9","DkMle5Eg"};
-String[] style_ids = {"LnL71DkK","9kgYo1Zp","Bka9oBkM","2kRl49ZW","MZJNYmZY","LnL7oLkK","8k8aLmnM","yE72lBZm"};
+//String[] style_ids = {"LnL71DkK","9kgYo1Zp","Bka9oBkM","2kRl49ZW","MZJNYmZY","LnL7oLkK","8k8aLmnM","yE72lBZm"};
+String[] style_ids = {};
+
 String[] model_ids = concat(dream_ids,style_ids);
 String cam_path;
 int first_step = 0;
