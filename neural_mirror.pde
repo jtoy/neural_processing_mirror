@@ -2,11 +2,13 @@
 // we render the images into a random style/dream, then we cycle through those images. 
 //save a list of images in data/processed, then have our code randomly grab and render it
 import processing.video.*;
+import java.util.Calendar;
+
+
 import http.requests.*;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.util.Arrays;
-
 import java.nio.file.Files;
 import java.util.Random;
 import org.apache.http.client.HttpClient;
@@ -39,7 +41,6 @@ float rot = 360.0;
 PGraphics pgTaiji;
 PImage piBuffer;
 PImage transition_image;
-int counter= 1;
 int our_height = 1080;
 int our_width = 1920;
 int processed = 0;
@@ -50,11 +51,13 @@ int direction = 0;
 float lerp_rate = 0;
 String[] dream_ids = {"pE4A9yk0","7ZxJpMk9","DkMle5Eg"};
 String[] style_ids = {"LnL71DkK","9kgYo1Zp","Bka9oBkM","2kRl49ZW","MZJNYmZY","LnL7oLkK","8k8aLmnM","yE72lBZm"};
-String[] model_ids = new  String[dream_ids.length + style_ids.length];
+String[] model_ids = concat(dream_ids,style_ids);
 String cam_path;
-PImage[] model_images = new PImage[model_ids.length];
 int first_step = 0;
-Model[] models = new Model[model_ids.length];
+File processed_dir;
+File cam_dir;
+ 
+
 PGraphics rotatingTaiji(int a,float xstep,float ystep) {
   PGraphics taiji = createGraphics(width, height);
   taiji.beginDraw();
@@ -79,26 +82,25 @@ PGraphics rotatingTaiji(int a,float xstep,float ystep) {
   taiji.endDraw();
   return taiji;
 }
-class Model implements Runnable {
+class Somatic implements Runnable {
   private Thread t;
   PImage image;
-  String model_id;
+  String image_path;
   int retry_count = 0;
-  public Model(String mid) {
-    model_id = mid;
+  public Somatic(String img_path) {
+    image_path = img_path;
   }
   public void start () {
-    t = new Thread (this, model_id);
+    t = new Thread (this, image_path);
     t.start ();
   }
   public void run(){
     println("RUN");
       int rnd = new Random().nextInt(model_ids.length);
-      model_id = model_ids[rnd];
+      String model_id = model_ids[rnd];
       String field_name = null;
       if(Arrays.asList(dream_ids).contains(model_id)){
         field_name = "--image";
-        
       }else{
         field_name = "--input";
       }
@@ -110,16 +112,17 @@ class Model implements Runnable {
 
       MultipartEntity entity = new MultipartEntity();
       BasicNameValuePair nvp = new BasicNameValuePair("api_key",System.getenv("SOMATIC_API_KEY"));
+
       entity.addPart(nvp.getName(), new StringBody(nvp.getValue()));
-      File cam_file = new File(cam_path);
+      File cam_file = new File(image_path);
       println(cam_file.length());
-      entity.addPart(field_name, new FileBody(new File(cam_path)));
+      entity.addPart(field_name, new FileBody(new File(image_path)));
       BasicNameValuePair nvp2 = new BasicNameValuePair("id",model_id);
       entity.addPart(nvp2.getName(), new StringBody(nvp2.getValue()));
       post.setEntity(entity);
       HttpResponse response = client.execute(post);
-
-      String processed_path = path+"/processed_"+model_id+".png";
+      Calendar now = Calendar.getInstance();
+      String processed_path = path+"/processed/"+String.format("%1$ty%1$tm%1$td_%1$tH%1$tM%1$tS", now)+"_"+model_id+".png";
       InputStream instream = response.getEntity().getContent();
       FileOutputStream output = new FileOutputStream(processed_path);
       int bufferSize = 1024;
@@ -141,7 +144,6 @@ class Model implements Runnable {
         println("style not fine");
       }
       processed += 1;
-      counter +=1 ;
       threads_processing -= 1;
       println("processed from somatic");
       }catch (Exception e){
@@ -152,16 +154,26 @@ class Model implements Runnable {
     }
 }
 
-void get_images(){
-
+void get_image(){
+  if(cam.available()) {
+    cam.read();
+  
+    Calendar now = Calendar.getInstance();
+    cam_path = path+"/cams/"+String.format("%1$ty%1$tm%1$td_%1$tH%1$tM%1$tS", now)+".png";
+    cam.save(cam_path);
+    Somatic transformer = new Somatic(cam_path);
+    transformer.start();
+  }
 }
 
 void setup() {
   path = dataPath("");
-  File dir = new File(path+"/processed/");
-  dir.mkdirs();
-  //size(1080,1080,P2D);
-  fullScreen(P2D);
+  processed_dir = new File(path+"/processed/");
+  processed_dir.mkdirs();
+  cam_dir = new File(path+"/cams/");
+  cam_dir.mkdirs();
+  size(1080,1080,P2D);
+  //fullScreen(P2D);
   println("key:"+System.getenv("SOMATIC_API_KEY"));
   cam = new Capture(this, 1280,720, 30);
   cam.start();
@@ -192,9 +204,7 @@ void draw() {
   }
     cam_image = cam;
     if(first_step == 0){
-      cam_path = path +"/cam.png";
-      cam.save(cam_path);
-      get_images();
+      get_image();
       first_step = 1;
 
     }
@@ -205,11 +215,8 @@ void draw() {
   }else if( millis() - lastTime >= 60000){
   //}else if( millis() - lastTime >= 120000){
     lastTime = millis();
-    cam_image = cam;
-    cam_path = path +"/cam.png";
-    cam.save(cam_path);
-    get_images();
-    println("2 minutes passed");
+    get_image();
+    println("1 minute passed");
 
   }else if (source_image != null && target_image != null){
 
@@ -275,25 +282,16 @@ void draw() {
   if (jitter== 1 || jitter == 0){
     lerp_rate = 0;
     cam.read();
-    int model_counter = counter%(model_images.length);
     PImage next_image = null;
-    PImage current_image = model_images[model_counter];
     while(next_image == null){
-      model_counter = counter%(model_images.length);
       println("XXXXXXXXXXXX");
-      if (model_counter  < model_images.length){
-        if(models[model_counter] != null && models[model_counter].image != null){
-          next_image =  models[model_counter].image;
-          counter += 1;
-        }
-      }else{
-        counter = 0;
-        if(models[0] != null && models[model_counter].image != null){
-          next_image = models[model_counter].image;
-        }else{
-          counter +=1 ;
-        }
-      }
+      File[] listOfFiles = processed_dir.listFiles();
+      int file_count = listOfFiles.length;
+      Random random = new Random();
+      int index = random.nextInt(file_count);
+      println(listOfFiles[index]);
+      println("ASDSD");
+      //next_image = loadImage(listOfFiles[index]);
     }
     println("end while");
 
