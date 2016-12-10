@@ -113,7 +113,8 @@ class Somatic implements Runnable {
       try{
 
       MultipartEntity entity = new MultipartEntity();
-      BasicNameValuePair nvp = new BasicNameValuePair("api_key",System.getenv("SOMATIC_API_KEY"));
+      BasicNameValuePair nvp = new BasicNameValuePair("api_key","Hlcltrmqpvlldlc7l6lzdw53qod6gK");
+      //BasicNameValuePair nvp = new BasicNameValuePair("api_key",System.getenv("SOMATIC_API_KEY"));
 
       entity.addPart(nvp.getName(), new StringBody(nvp.getValue()));
       File cam_file = new File(image_path);
@@ -289,7 +290,7 @@ void draw() {
 
 
   image(transition_image, 0,0);
-  text("Jitter: " + jitter, 10,10);
+//  text("Jitter: " + jitter, 10,10);
   if (jitter== 1 || jitter == 0){
     lerp_rate = 0;
     cam.read();
